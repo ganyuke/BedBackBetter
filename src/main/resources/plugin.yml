@@ -1,0 +1,10 @@
+name: BedFallback
+description: $description
+version: '${version}'
+
+main: io.github.ganyuke.bedFallback.BedFallback
+api-version: '26.1.2'
+load: POSTWORLD
+
+authors: [ ganyuke ]
+website: https://github.com/ganyuke/BedFallback
