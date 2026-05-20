@@ -11,18 +11,25 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.UUID
+import java.util.logging.Logger
 
 class RespawnHijackListener : Listener {
     private val playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>> = HashMap()
     private val pendingRespawnLocation: MutableMap<UUID, Location> = HashMap()
 
-    private val plugin: JavaPlugin
+    private val logger: Logger
     private val pluginConfig: PluginConfiguration
 
     constructor(plugin: JavaPlugin, config: PluginConfiguration) {
-        this.plugin = plugin
+        this.logger = plugin.logger
         this.pluginConfig = config
     }
+
+    private fun Logger.debug(msg: String) {
+        if (pluginConfig.debugMode) this.info("[DEBUG] $msg")
+    }
+
+    private fun Location.toStringCoord(): String = "(${x.toInt()},${y.toInt()},${z.toInt()})"
 
     fun onDisable() {
         playerRespawnRecorder.clear()
@@ -50,10 +57,12 @@ class RespawnHijackListener : Listener {
         // must re-set the player's spawn on failed spawn
         if (event.cause != PlayerSetSpawnEvent.Cause.PLUGIN) {
             val pendingRespawn = pendingRespawnLocation.remove(player.uniqueId)
-            plugin.logger.info("$pendingRespawn, ${event.cause}")
-
             if (pendingRespawn != null) {
-                plugin.logger.info("activating override")
+                logger.debug("""
+                    |Overriding spawn for ${player.name}: moved from
+                    | ${player.respawnLocation?.toStringCoord()} in ${player.respawnLocation?.world?.name}
+                    | to ${pendingRespawn.toStringCoord()} in ${pendingRespawn.world.name}
+                """.trimMargin())
 
                 // ignore world spawn set
                 event.isCancelled = true
@@ -81,7 +90,7 @@ class RespawnHijackListener : Listener {
         // record the new spawn location in our stack
         val history = playerRespawnRecorder.getOrPut(player.uniqueId) { ArrayDeque() }
         if (history.lastOrNull()?.worldCoord != respawnRecord.worldCoord) {
-            plugin.logger.info("new record: $respawnRecord for player: ${player.name}")
+            logger.debug("Added a new spawn record for player: ${player.name}: $respawnRecord")
             history.add(respawnRecord)
         }
     }
@@ -93,7 +102,7 @@ class RespawnHijackListener : Listener {
         // skip hijack if the respawn is considered valid by vanilla
         if (!event.isMissingRespawnBlock) {
             val loc = event.respawnLocation
-            plugin.logger.info("Valid respawn block at (${loc.x}, ${loc.y}, ${loc.z}) for player: ${player.name}")
+            logger.debug("Skipped hijacking spawn location for player ${player.name}: valid respawn at (${loc.x}, ${loc.y}, ${loc.z}) in ${loc.world.name}")
             return
         }
 
@@ -113,7 +122,7 @@ class RespawnHijackListener : Listener {
             // failed respawn attempt
             event.respawnLocation = respawnLocation
             pendingRespawnLocation[player.uniqueId] = respawnLocation
-            plugin.logger.info("Attempting respawn at (${coord.toCoord()}) for player: ${player.name}")
+            logger.debug("Hijacking spawn location for player ${player.name}: new location (${coord.toCoord()}) in world UID ${coord.world}")
 
             // if it's a respawn anchor, deplete it
             if (record.cause == PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR) {
@@ -125,11 +134,11 @@ class RespawnHijackListener : Listener {
                     block.blockData = anchor
                 } else {
                     // what even is this thing??
-                    plugin.logger.warning("Expected RespawnAnchor at ${coord.toCoord()} but found ${block.blockData::class.simpleName}")
+                    logger.warning("Expected RespawnAnchor at ${coord.toCoord()} but found ${block.blockData::class.simpleName}")
                 }
             }
         } else {
-            plugin.logger.info("No valid respawn location found for player: ${player.name}, falling back to world spawn")
+            logger.debug("No valid respawn location found for player ${player.name}, falling back to world spawn")
         }
 
         // if no respawn location was found at this point, then the player will be put at world spawn
