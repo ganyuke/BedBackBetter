@@ -1,9 +1,14 @@
 package io.github.ganyuke.bedFallback
 
 import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent
+import io.github.ganyuke.bedFallback.compaction.CompactionStrategy
+import io.github.ganyuke.bedFallback.compaction.LastNCompaction
+import io.github.ganyuke.bedFallback.compaction.LastNDimensionCompaction
+import io.github.ganyuke.bedFallback.compaction.LastNValidCompaction
+import io.github.ganyuke.bedFallback.compaction.LastNValidDimensionCompaction
+import io.github.ganyuke.bedFallback.compaction.RespawnPolicy
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.World
 import org.bukkit.block.data.type.RespawnAnchor
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -12,27 +17,24 @@ import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.UUID
 
-enum class RespawnPolicy {
-    LAST_N,
-    LAST_N_VALID,
-    LAST_N_IN_DIMENSION,
-    LAST_N_VALID_IN_DIMENSION,
-}
-
 class RespawnHijackListener : Listener {
     private val playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>>
     private val pendingRespawnLocation: MutableMap<UUID, Location> = HashMap()
 
     private val playerRespawnLimit = 5 // TODO; make configurable
-    private val playerRespawnPolicy: RespawnPolicy
+    private val compactionStrategy: CompactionStrategy
     private val plugin: JavaPlugin
 
 
-    constructor(plugin: JavaPlugin, playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>>) {
+    constructor(plugin: JavaPlugin, playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>>, playerRespawnPolicy: RespawnPolicy) {
         this.plugin = plugin
         this.playerRespawnRecorder = playerRespawnRecorder
-        playerRespawnPolicy = RespawnPolicy.LAST_N
-
+        this.compactionStrategy = when (playerRespawnPolicy) {
+            RespawnPolicy.LAST_N -> LastNCompaction
+            RespawnPolicy.LAST_N_VALID -> LastNValidCompaction
+            RespawnPolicy.LAST_N_IN_DIMENSION -> LastNDimensionCompaction
+            RespawnPolicy.LAST_N_VALID_IN_DIMENSION -> LastNValidDimensionCompaction
+        }
     }
 
     fun onDisable() {
@@ -40,26 +42,10 @@ class RespawnHijackListener : Listener {
         pendingRespawnLocation.clear()
     }
 
-    fun WorldCoord.toLocation(world: World) =
-        Location(world, x.toDouble(), y.toDouble(), z.toDouble())
-
-    fun WorldCoord.toCoord() =
-        "($x, $y, $z)"
-
-    private fun findSuitableRespawnLocation(record: RespawnRecord): Location? = record.worldCoord.world.let { world -> Bukkit.getWorld(world) }?.let { world ->
-        when (record.cause) {
-            PlayerSetSpawnEvent.Cause.BED -> BedRespawnLogic.getRespawnLocation(record.worldCoord.toLocation(world), record.playerYaw)
-            PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR -> RespawnAnchorLogic.getRespawnLocation(record.worldCoord.toLocation(world))
-            // Bed and Respawn Anchor are the only two ways to respawn in vanilla (other than world spawn)
-            // so and i don't want to bother trying to do the special logic for things other than vanilla respawns
-            else -> null
-        }
-    }
-
     private fun resolveValidRecord(history: ArrayDeque<RespawnRecord>, skipLast: Int = 1): Pair<RespawnRecord, Location>? {
         val validEntry = history.indices.reversed().drop(skipLast)
             .firstNotNullOfOrNull { i ->
-                findSuitableRespawnLocation(history[i])?.let { loc -> Pair(i, loc) }
+                resolveLocation(history[i])?.let { loc -> Pair(i, loc) }
             }
 
         val keepUntil = validEntry?.first ?: -1
@@ -126,8 +112,9 @@ class RespawnHijackListener : Listener {
 
         // vanilla considers spawn invalid; attempt to find a valid respawn record for the player
         // drop the most recent record since that is the one that just failed
-        val resolved = playerRespawnRecorder[player.uniqueId]
-            ?.let { resolveValidRecord(it, skipLast = 1) }
+        val playerSpawnRecords = playerRespawnRecorder[player.uniqueId]
+        val resolved = playerSpawnRecords?.let { record -> resolveValidRecord(record, skipLast = 1) }
+        playerSpawnRecords?.let { compactionStrategy.compact(it, playerRespawnLimit) }
 
         if (resolved != null) {
             val (record, respawnLocation) = resolved

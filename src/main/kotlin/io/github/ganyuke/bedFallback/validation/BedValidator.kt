@@ -1,5 +1,8 @@
-package io.github.ganyuke.bedFallback
+package io.github.ganyuke.bedFallback.validation
 
+import io.github.ganyuke.bedFallback.RespawnRecord
+import io.github.ganyuke.bedFallback.toLocation
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
@@ -8,18 +11,19 @@ import org.bukkit.util.Vector
 import kotlin.math.cos
 import kotlin.math.sin
 
-object BedRespawnLogic {
+object BedValidator : SpawnValidator {
 
     /**
      * Main entry point to find a valid bed respawn location.
      *
-     * @param savedLoc The location saved when the player clicked the bed.
-     * @param playerYawWhenSet The yaw (rotation) of the player when they set their spawn.
+     * @param record The player respawn record.
      * @return A valid Location to spawn the player, or null if obstructed/missing.
      */
-    fun getRespawnLocation(savedLoc: Location, playerYawWhenSet: Float): Location? {
+    override fun validate(record: RespawnRecord): Location? {
+        val savedLoc = Bukkit.getWorld(record.worldCoord.world)?.let { record.worldCoord.toLocation(it) } ?: return null
         val world = savedLoc.world ?: return null
         val savedBlock = world.getBlockAt(savedLoc)
+        val playerYawWhenSet = record.playerYaw
 
         // 1. Bed Presence Check
         // "as long as there is a bed present in the same location, the player can respawn there."

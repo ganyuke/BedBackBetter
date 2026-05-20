@@ -1,5 +1,6 @@
 package io.github.ganyuke.bedFallback
 
+import io.github.ganyuke.bedFallback.compaction.RespawnPolicy
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.UUID
 
@@ -11,7 +12,7 @@ class BedFallback : JavaPlugin() {
         // Plugin startup logic
         val playerRespawnRecordMap = HashMap<UUID, ArrayDeque<RespawnRecord>>()
 
-        respawnHijackListener = RespawnHijackListener(this, playerRespawnRecordMap)
+        respawnHijackListener = RespawnHijackListener(this, playerRespawnRecordMap, RespawnPolicy.LAST_N_VALID)
 
         server.pluginManager.registerEvents(respawnHijackListener, this)
 

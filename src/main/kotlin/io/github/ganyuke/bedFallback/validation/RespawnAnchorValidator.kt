@@ -1,10 +1,13 @@
-package io.github.ganyuke.bedFallback
+package io.github.ganyuke.bedFallback.validation
+
+import io.github.ganyuke.bedFallback.RespawnRecord
+import io.github.ganyuke.bedFallback.toLocation
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.block.data.type.RespawnAnchor
-import org.bukkit.util.Vector
 
-object RespawnAnchorLogic {
+object RespawnAnchorValidator : SpawnValidator {
 
     /**
      * Column offsets based on the provided priority grid (1-9).
@@ -25,10 +28,11 @@ object RespawnAnchorLogic {
     /**
      * Finds the highest priority valid respawn location around a Respawn Anchor.
      *
-     * @param savedLoc The Location of the Respawn Anchor block.
+     * @param record The player respawn record.
      * @return A valid Location to spawn the player, or null if obstructed, missing, or depleted.
      */
-    fun getRespawnLocation(savedLoc: Location): Location? {
+    override fun validate(record: RespawnRecord): Location? {
+        val savedLoc = Bukkit.getWorld(record.worldCoord.world)?.let { record.worldCoord.toLocation(it) } ?: return null
         val world = savedLoc.world ?: return null
         val anchorBlock = world.getBlockAt(savedLoc)
 
