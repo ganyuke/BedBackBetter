@@ -3,9 +3,7 @@ package io.github.ganyuke.bedFallback
 import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.Material
 import org.bukkit.World
-import org.bukkit.block.data.type.Bed
 import org.bukkit.block.data.type.RespawnAnchor
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -48,45 +46,28 @@ class RespawnHijackListener : Listener {
     fun WorldCoord.toCoord() =
         "($x, $y, $z)"
 
-    // check if the respawn anchor is even valid
-    private fun isAnchorValid(coord: WorldCoord): Boolean {
-        val world = Bukkit.getWorld(coord.world) ?: return false // bad world? just to be safe
-        if (world.environment != World.Environment.NETHER) return false // respawn anchor only valid in nether
-        // attempt to cast block to respawn anchor; failure indicates: not a respawn anchor anymore (i.e. it's gone)
-        val anchor = world.getBlockAt(coord.x, coord.y, coord.z).blockData as? RespawnAnchor ?: return false
-        return anchor.charges > 0 // check if the respawn anchor charges are still valid
+    private fun findSuitableRespawnLocation(record: RespawnRecord): Location? = record.worldCoord.world.let { world -> Bukkit.getWorld(world) }?.let { world ->
+        when (record.cause) {
+            PlayerSetSpawnEvent.Cause.BED -> BedRespawnLogic.getRespawnLocation(record.worldCoord.toLocation(world), record.playerYaw)
+            PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR -> RespawnAnchorLogic.getRespawnLocation(record.worldCoord.toLocation(world))
+            // Bed and Respawn Anchor are the only two ways to respawn in vanilla (other than world spawn)
+            // so and i don't want to bother trying to do the special logic for things other than vanilla respawns
+            else -> null
+        }
     }
 
-    // check if the bed is even valid
-    private fun isBedValid(coord: WorldCoord): Boolean {
-        val world = Bukkit.getWorld(coord.world) ?: return false // bad world? just to be safe
-        if (world.environment != World.Environment.NORMAL) return false // bed only valid in the overworld
-        // attempt to cast block to bed; failure indicates: not a bed anymore (i.e. it's gone)
-        val bed = world.getBlockAt(coord.x, coord.y, coord.z).blockData as? Bed ?: return false
-        // TODO: check obstructions to bed
-        return true
-    }
+    private fun resolveValidRecord(history: ArrayDeque<RespawnRecord>, skipLast: Int = 1): Pair<RespawnRecord, Location>? {
+        val validEntry = history.indices.reversed().drop(skipLast)
+            .firstNotNullOfOrNull { i ->
+                findSuitableRespawnLocation(history[i])?.let { loc -> Pair(i, loc) }
+            }
 
-    private fun isValid(record: RespawnRecord): Boolean = when (record.cause) {
-        PlayerSetSpawnEvent.Cause.BED -> isBedValid(record.worldCoord)
-        PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR -> isAnchorValid(record.worldCoord)
-        // Bed and Respawn Anchor are the only two ways to respawn in vanilla (other than world spawn)
-        // so I won't bother trying to do the special logic for things other than vanilla respawns
-        else -> true
-    }
-
-    private fun resolveValidRecord(history: ArrayDeque<RespawnRecord>, skipLast: Int = 1): RespawnRecord? {
-        val validIndex = history.indices.reversed().drop(skipLast)
-            .firstOrNull { isValid(history[it]) }
-
-        // drop everything before stale record since they are invalid
-        // no valid record means clear everything
-        val keepUntil = validIndex ?: -1
+        val keepUntil = validEntry?.first ?: -1
         while (history.size - 1 > keepUntil) {
             history.removeLast()
         }
 
-        return if (validIndex != null) history[validIndex] else null
+        return validEntry?.let { (i, loc) -> Pair(history[i], loc) }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -120,7 +101,8 @@ class RespawnHijackListener : Listener {
 
         val respawnRecord = RespawnRecord(
             WorldCoord(location.x.toInt(), location.y.toInt(), location.z.toInt(), location.world.uid),
-            event.cause
+            event.cause,
+            player.yaw
         )
 
         // record the new spawn location in our stack
@@ -143,26 +125,24 @@ class RespawnHijackListener : Listener {
         }
 
         // vanilla considers spawn invalid; attempt to find a valid respawn record for the player
-        val respawnRecord = playerRespawnRecorder[player.uniqueId]
-            // drop the most recent record since that is the one that just failed
-            // then iterate backward through the records to find the first valid
+        // drop the most recent record since that is the one that just failed
+        val resolved = playerRespawnRecorder[player.uniqueId]
             ?.let { resolveValidRecord(it, skipLast = 1) }
 
-        val world = respawnRecord
-            ?.let { record -> Bukkit.getWorld(record.worldCoord.world) }
+        if (resolved != null) {
+            val (record, respawnLocation) = resolved
+            val coord = record.worldCoord
+            val world = Bukkit.getWorld(coord.world)!! // resolveValidRecord already validated this world exists
 
-        val respawnLocation = world?.let { world -> respawnRecord.worldCoord.toLocation(world) }
-
-        if (respawnLocation != null) {
             // this gets overridden later by world spawn, but we need to set the respawn location
             // in the event so the player gets sent to our fallback spawn (not world spawn) on the
             // failed respawn attempt
             event.respawnLocation = respawnLocation
+            pendingRespawnLocation[player.uniqueId] = respawnLocation
+            plugin.logger.info("Attempting respawn at (${coord.toCoord()}) for player: ${player.name}")
 
-            val coord = respawnRecord.worldCoord
-
-            // if it's a respawn anchor, need to deplete it
-            if (respawnRecord.cause == PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR) {
+            // if it's a respawn anchor, deplete it
+            if (record.cause == PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR) {
                 val block = world.getBlockAt(coord.x, coord.y, coord.z)
                 val anchor = block.blockData as? RespawnAnchor
 
@@ -170,15 +150,12 @@ class RespawnHijackListener : Listener {
                     anchor.charges -= 1
                     block.blockData = anchor
                 } else {
-                    plugin.logger.warning("Expected RESPAWN ANCHOR at ${coord.toCoord()} but failed to cast.")
                     // what even is this thing??
+                    plugin.logger.warning("Expected RespawnAnchor at ${coord.toCoord()} but found ${block.blockData::class.simpleName}")
                 }
             }
-
-            pendingRespawnLocation[player.uniqueId] = respawnLocation
-            plugin.logger.info("Attempting respawn at (${coord.toCoord()}}) for player: ${player.name}")
         } else {
-            plugin.logger.info("No valid respawn location found for player: ${player.name}")
+            plugin.logger.info("No valid respawn location found for player: ${player.name}, falling back to world spawn")
         }
 
         // if no respawn location was found at this point, then the player will be put at world spawn
