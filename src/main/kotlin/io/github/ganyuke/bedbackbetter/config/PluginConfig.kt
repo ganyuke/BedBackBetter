@@ -16,7 +16,7 @@ object PluginConfig {
     const val AUTO_SAVE_DEFAULT = 5
     val FALLBACK_POLICY_DEFAULT = FallbackPolicy.LAST_N_VALID
 
-    data class PluginConfiguration(val spawnLimit: Int, val fallbackPolicy: FallbackPolicy, val autosaveInterval: Int, val debugMode: Boolean) {
+    data class PluginConfiguration(val spawnLimit: Int, val fallbackPolicy: FallbackPolicy, val autosaveInterval: Int, val fallbackMessage: String, val debugMode: Boolean) {
         fun resolveFallback() = when (this.fallbackPolicy) {
             FallbackPolicy.LAST_N -> LastNCompaction
             FallbackPolicy.LAST_N_VALID -> LastNValidCompaction
@@ -44,8 +44,10 @@ object PluginConfig {
                 AUTO_SAVE_DEFAULT
             }
 
+        val fallbackMessage = config.getString("fallback-respawn-message") ?: ""
+
         val debugMode = config.getBoolean("debug-mode", false)
 
-        return PluginConfiguration(spawnLimit, fallbackPolicy, autosaveInterval, debugMode)
+        return PluginConfiguration(spawnLimit, fallbackPolicy, autosaveInterval, fallbackMessage, debugMode)
     }
 }

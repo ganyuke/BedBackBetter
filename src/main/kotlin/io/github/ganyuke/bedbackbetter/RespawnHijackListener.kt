@@ -4,6 +4,7 @@ package io.github.ganyuke.bedbackbetter
 
 import io.github.ganyuke.bedbackbetter.config.PluginConfig.PluginConfiguration
 import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.data.type.RespawnAnchor
@@ -25,6 +26,8 @@ class RespawnHijackListener : Listener {
 
     private val logger: Logger
     private val pluginConfig: PluginConfiguration
+
+    private val miniMessage = MiniMessage.miniMessage()
 
     constructor(plugin: JavaPlugin, config: PluginConfiguration, respawnRecordMap: MutableMap<UUID, ArrayDeque<RespawnRecord>>) {
         this.logger = plugin.logger
@@ -79,6 +82,10 @@ class RespawnHijackListener : Listener {
                 val loc = coord.toLocation(world)
                 loc.yaw = pendingRespawn.playerYaw // important for bed facing direction (left or right of head)
                 player.respawnLocation = loc
+
+                if (pluginConfig.fallbackMessage.isNotBlank()   )
+                    player.sendMessage(miniMessage.deserialize(pluginConfig.fallbackMessage))
+
                 return
             }
         }

@@ -8,8 +8,11 @@ spawn-point-limit: 5
 # - LAST_N_VALID_IN_DIMENSION: Consider only the N most recent *valid* spawn points in that dimension
 fallback-policy: LAST_N_VALID
 
-# How often to autosave spawn records (in minutes)
+# How often to autosave spawn records (in minutes). Set to 0 to never autosave.
 autosave-interval: 5
+
+# What to say to players when they fall back to a new location. Set to "" to omit a message.
+fallback-respawn-message: "Your respawn was updated to a new location"
 
 # Enable debug functionality (server logs when spawn changes, record changes, etc.)
 debug-mode: false

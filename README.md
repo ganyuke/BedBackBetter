@@ -3,7 +3,7 @@ Never worry about your friend breaking your bed! Your last 5 valid spawn points 
 
 Includes respawn anchors as well!
 
-A set-it-and-forget-it Paper plugin for Minecraft 1.21+ that lets you fallback to previous beds and respawn anchors. 
+A set-it-and-forget-it Paper plugin for Minecraft 1.21+ that lets you fallback to previous beds and respawn anchors.
 
 Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments/1tbfibr/use_last_5respawnpoints/).
 
