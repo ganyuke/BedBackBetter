@@ -34,7 +34,7 @@ class PlayerSpawnWatcher {
         val lastRespawn = lastRespawnLocations[player.uniqueId]
         if (lastRespawn == null || lastRespawn != currentRespawn) {
             if (lastRespawn != null) {
-                plugin.logger.info("[DEBUG] Respawn changed for player ${player.name}: ${currentRespawn.blockX}, ${currentRespawn.blockY}, ${currentRespawn.blockZ}.")
+                plugin.logger.info("[DEBUG] Detected respawn change for player ${player.name}: (${currentRespawn.blockX}, ${currentRespawn.blockY}, ${currentRespawn.blockZ}) in '${currentRespawn.world}'")
             }
             lastRespawnLocations[player.uniqueId] = currentRespawn
         }

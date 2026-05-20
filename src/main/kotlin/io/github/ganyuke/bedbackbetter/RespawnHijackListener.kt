@@ -24,6 +24,9 @@ class RespawnHijackListener : Listener {
     // actually clicks "Respawn" on the "You Died!" screen.
     private val pendingRespawnLocation: MutableMap<UUID, RespawnRecord> = HashMap()
 
+    // debounce the next plugin event. could use the previous pendingRespawnLocation but that is a bit messy conceptually
+    private val suppressNextPluginEvent: MutableSet<UUID> = HashSet()
+
     private val logger: Logger
     private val pluginConfig: PluginConfiguration
 
@@ -64,34 +67,45 @@ class RespawnHijackListener : Listener {
     fun listenForSpawnSet(event: PlayerSetSpawnEvent) {
         val player = event.player
 
-        // must re-set the player's spawn on failed spawn
-        if (event.cause != PlayerSetSpawnEvent.Cause.PLUGIN) {
-            val pendingRespawn = pendingRespawnLocation.remove(player.uniqueId)
-            if (pendingRespawn != null) {
-                val coord = pendingRespawn.worldCoord
-                val world = Bukkit.getWorld(coord.world)!! // already verified by logic that put this key here in the first place
+        when (event.cause) {
+            PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN -> {
+                if (pendingRespawnLocation[player.uniqueId] != null) {
+                    // must re-set the player's spawn on failed spawn
+                    val pendingRespawn = pendingRespawnLocation.remove(player.uniqueId)
+                    if (pendingRespawn != null) {
+                        val coord = pendingRespawn.worldCoord
+                        val world = Bukkit.getWorld(coord.world)!! // already verified by logic that put this key here in the first place
 
-                logger.debug(
-                    "Overriding spawn for ${player.name}: moved from ${player.respawnLocation?.toStringCoord()} in ${player.respawnLocation?.world?.name} ${coord.toCoord()} in ${world.name}")
+                        logger.debug(
+                            "Overriding spawn for ${player.name}: ${event.location?.toStringCoord()} in '${event.location?.world?.name}' -> ${coord.toCoord()} in '${world.name}'")
 
-                // ignore world spawn set
-                event.isCancelled = true
+                        // ignore world spawn set
+                        event.isCancelled = true
 
-                // make sure to set respawn AFTER removing from set
-                // otherwise you'll get an infinite loop
-                val loc = coord.toLocation(world)
-                loc.yaw = pendingRespawn.playerYaw // important for bed facing direction (left or right of head)
-                player.respawnLocation = loc
+                        // suppress the next plugin event. don't want to re-record a new row unnecessarily
+                        suppressNextPluginEvent.add(player.uniqueId)
 
-                if (pluginConfig.fallbackMessage.isNotBlank()   )
-                    player.sendMessage(miniMessage.deserialize(pluginConfig.fallbackMessage))
+                        // make sure to set respawn AFTER removing from set
+                        // otherwise you'll get an infinite loop
+                        val loc = coord.toLocation(world)
+                        loc.yaw = pendingRespawn.playerYaw // important for bed facing direction (left or right of head)
+                        player.respawnLocation = loc // this will run synchronously
 
-                return
+                        if (pluginConfig.fallbackMessage.isNotBlank())
+                            player.sendMessage(miniMessage.deserialize(pluginConfig.fallbackMessage))
+
+                        return
+                    }
+                }
             }
+            PlayerSetSpawnEvent.Cause.PLUGIN -> {
+                if (suppressNextPluginEvent.remove(player.uniqueId)) {
+                    logger.debug("Suppressed a plugin-fired PlayerSetSpawnEvent")
+                    return
+                }
+            }
+            else -> {}
         }
-
-        if (event.cause == PlayerSetSpawnEvent.Cause.PLUGIN) return // suppress recording plugin respawns
-        if (event.cause == PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN) return // suppress recording player respawn
 
         // I don't know why location would be null, but we can't
         // really do anything with a null location so return
@@ -112,12 +126,14 @@ class RespawnHijackListener : Listener {
         if (mostRecentRecord?.worldCoord == respawnRecord.worldCoord) {
             if (mostRecentRecord.playerYaw != respawnRecord.playerYaw && respawnRecord.cause == PlayerSetSpawnEvent.Cause.BED) {
                 history.removeLast()
+                logger.debug("Updating an existing spawn record for player: ${player.name}: $respawnRecord")
             } else {
                 return // record is probably exactly the same, just ignore it
             }
+        } else {
+            logger.debug("Added a new spawn record for player ${player.name}: $respawnRecord")
         }
 
-        logger.debug("Added a new spawn record for player: ${player.name}: $respawnRecord")
         history.add(respawnRecord)
     }
 
@@ -137,9 +153,14 @@ class RespawnHijackListener : Listener {
 
         // vanilla considers spawn invalid; attempt to find a valid respawn record for the player
         // drop the most recent record since that is the one that just failed
-        val playerSpawnRecords = playerRespawnRecorder[player.uniqueId]
-        val resolved = playerSpawnRecords?.let { record -> resolveValidRecord(record, skipLast = 1) }
-        playerSpawnRecords?.let { pluginConfig.resolveFallback().compact(it, pluginConfig.spawnLimit) }
+        val playerSpawnRecords = playerRespawnRecorder[player.uniqueId] ?: return // can't do anything with a null record
+        val resolved = resolveValidRecord(playerSpawnRecords, skipLast = 1) // drops records (like vanilla) until valid
+
+        // get some memory savings for records that will never see the light of day
+        val sizeBefore = playerSpawnRecords.size
+        playerSpawnRecords.let { pluginConfig.resolveFallback().compact(it, pluginConfig.spawnLimit) }
+        val sizeAfter = playerSpawnRecords.size
+        if (sizeAfter < sizeBefore) logger.debug("Compacted spawn records for ${player.name}: $sizeBefore -> $sizeAfter")
 
         if (resolved != null) {
             val (record, respawnLocation) = resolved
@@ -151,7 +172,7 @@ class RespawnHijackListener : Listener {
             // failed respawn attempt
             event.respawnLocation = respawnLocation
             pendingRespawnLocation[player.uniqueId] = record
-            logger.debug("Hijacking spawn location for player ${player.name}: new location (${coord.toCoord()}) in world UID ${coord.world}")
+            logger.debug("Hijacking spawn location for player ${player.name}: new location ${coord.toCoord()} in '${respawnLocation.world.name}'")
 
             // if it's a respawn anchor, deplete it
             if (record.cause == PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR) {
