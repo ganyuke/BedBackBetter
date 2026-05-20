@@ -16,15 +16,20 @@ import java.util.UUID
 import java.util.logging.Logger
 
 class RespawnHijackListener : Listener {
-    private val playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>> = HashMap()
-    private val pendingRespawnLocation: MutableMap<UUID, Location> = HashMap()
+    private val playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>>
+
+    // no need to persist this since we are only listening to respawns. transition from dead to alive again is
+    // fast enough that this probably doesn't matter to persist. respawn doesn't happen until the player
+    // actually clicks "Respawn" on the "You Died!" screen.
+    private val pendingRespawnLocation: MutableMap<UUID, RespawnRecord> = HashMap()
 
     private val logger: Logger
     private val pluginConfig: PluginConfiguration
 
-    constructor(plugin: JavaPlugin, config: PluginConfiguration) {
+    constructor(plugin: JavaPlugin, config: PluginConfiguration, respawnRecordMap: MutableMap<UUID, ArrayDeque<RespawnRecord>>) {
         this.logger = plugin.logger
         this.pluginConfig = config
+        this.playerRespawnRecorder = respawnRecordMap
     }
 
     private fun Logger.debug(msg: String) {
@@ -60,18 +65,20 @@ class RespawnHijackListener : Listener {
         if (event.cause != PlayerSetSpawnEvent.Cause.PLUGIN) {
             val pendingRespawn = pendingRespawnLocation.remove(player.uniqueId)
             if (pendingRespawn != null) {
-                logger.debug("""
-                    |Overriding spawn for ${player.name}: moved from
-                    | ${player.respawnLocation?.toStringCoord()} in ${player.respawnLocation?.world?.name}
-                    | to ${pendingRespawn.toStringCoord()} in ${pendingRespawn.world.name}
-                """.trimMargin())
+                val coord = pendingRespawn.worldCoord
+                val world = Bukkit.getWorld(coord.world)!! // already verified by logic that put this key here in the first place
+
+                logger.debug(
+                    "Overriding spawn for ${player.name}: moved from ${player.respawnLocation?.toStringCoord()} in ${player.respawnLocation?.world?.name} ${coord.toCoord()} in ${world.name}")
 
                 // ignore world spawn set
                 event.isCancelled = true
 
                 // make sure to set respawn AFTER removing from set
                 // otherwise you'll get an infinite loop
-                player.respawnLocation = pendingRespawn
+                val loc = coord.toLocation(world)
+                loc.yaw = pendingRespawn.playerYaw // important for bed facing direction (left or right of head)
+                player.respawnLocation = loc
                 return
             }
         }
@@ -89,24 +96,34 @@ class RespawnHijackListener : Listener {
             player.yaw
         )
 
-        // record the new spawn location in our stack
+        // deduplication check
         val history = playerRespawnRecorder.getOrPut(player.uniqueId) { ArrayDeque() }
-        if (history.lastOrNull()?.worldCoord != respawnRecord.worldCoord) {
-            logger.debug("Added a new spawn record for player: ${player.name}: $respawnRecord")
-            history.add(respawnRecord)
+        val mostRecentRecord = history.lastOrNull()
+
+        // "Interacting with the bed again will still update which side of the bed is chosen for respawning, even if
+        // the location of the spawn point itself does not change." - Minecraft Wiki, Bed
+        if (mostRecentRecord?.worldCoord == respawnRecord.worldCoord) {
+            if (mostRecentRecord.playerYaw != respawnRecord.playerYaw && respawnRecord.cause == PlayerSetSpawnEvent.Cause.BED) {
+                history.removeLast()
+            } else {
+                return // record is probably exactly the same, just ignore it
+            }
         }
+
+        logger.debug("Added a new spawn record for player: ${player.name}: $respawnRecord")
+        history.add(respawnRecord)
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun hijackRespawn(event: PlayerRespawnEvent) {
         val player = event.player
 
-        // skip hijack if the respawn is considered valid by vanilla
-
         // isMissingRespawnBlock() was added in [this commit](https://github.com/PaperMC/Paper/pull/12422) in Paper 1.21.5
         // so that's as far as we can lower the API version, unless we want to do something hacky
         if (!event.isMissingRespawnBlock) { // only in 26.1+ i guess
+            // skip hijack if the respawn is considered valid by vanilla
             val loc = event.respawnLocation
+
             logger.debug("Skipped hijacking spawn location for player ${player.name}: valid respawn at (${loc.x}, ${loc.y}, ${loc.z}) in ${loc.world.name}")
             return
         }
@@ -126,7 +143,7 @@ class RespawnHijackListener : Listener {
             // in the event so the player gets sent to our fallback spawn (not world spawn) on the
             // failed respawn attempt
             event.respawnLocation = respawnLocation
-            pendingRespawnLocation[player.uniqueId] = respawnLocation
+            pendingRespawnLocation[player.uniqueId] = record
             logger.debug("Hijacking spawn location for player ${player.name}: new location (${coord.toCoord()}) in world UID ${coord.world}")
 
             // if it's a respawn anchor, deplete it

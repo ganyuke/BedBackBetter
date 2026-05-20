@@ -8,5 +8,8 @@ spawn-point-limit: 5
 # - LAST_N_VALID_IN_DIMENSION: Consider only the N most recent *valid* spawn points in that dimension
 fallback-policy: LAST_N_VALID
 
+# How often to autosave spawn records (in minutes)
+autosave-interval: 5
+
 # Enable debug functionality (server logs when spawn changes, record changes, etc.)
 debug-mode: false

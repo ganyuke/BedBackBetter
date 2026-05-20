@@ -111,20 +111,39 @@ object BedValidator : SpawnValidator {
         val left = getLeftFace(facing)
 
         // The 10 relative offsets around a 1x2 structure (Head is 0,0. Foot is back 1)
-        val clockwisePath = listOf(
-            right,                           // Right of Head
-            right.add(back),                 // Right of Foot
-            right.add(back).add(back),       // Corner: Right-Back
-            back.add(back),                  // Back of Foot
-            left.add(back).add(back),        // Corner: Left-Back
-            left.add(back),                  // Left of Foot
-            left,                            // Left of Head
-            left.add(fwd),                   // Corner: Left-Front
-            fwd,                             // Front of Head
-            right.add(fwd)                   // Corner: Right-Front
-        )
+        val side1 = if (clockwise) right else left
+        val side2 = if (clockwise) left else right
 
-        val path = if (clockwise) clockwisePath else clockwisePath.reversed()
+        // CLOCKWISE BED FORM
+        //               [North] (Front)
+        //         X: -1       0      +1
+        //   Z: -1   [ 8 ]   [ 9 ]   [ 10 ]
+        //       0   [ 7 ]     H     [  1 ]
+        //      +1   [ 6 ]     F     [  2 ]
+        //      +2   [ 5 ]   [ 4 ]   [  3 ]
+        //               [South] (Back)
+
+        // COUNTER-CLOCKWISE BED FORM
+        //               [North] (Front)
+        //         X:  -1       0      +1
+        //   Z: -1   [ 10 ]   [ 9 ]   [ 8 ]
+        //       0   [ 1  ]     H     [ 7 ]
+        //      +1   [ 2  ]     F     [ 6 ]
+        //      +2   [ 3  ]   [ 4 ]   [ 5 ]
+        //               [South] (Back)
+
+        val path = listOf(
+            side1,                           // [1] Side of Head
+            side1.add(back),                 // [2] Side of Foot
+            side1.add(back).add(back),       // [3] Corner: Side-Back
+            back.add(back),                  // [4] Back of Foot
+            side2.add(back).add(back),       // [5] Corner: Opp-Back
+            side2.add(back),                 // [6] Opp of Foot
+            side2,                           // [7] Opp of Head
+            side2.add(fwd),                  // [8] Corner: Opp-Front
+            fwd,                             // [9] Front of Head
+            side1.add(fwd)                   // [10] Corner: Side-Front
+        )
 
         // Map abstract BlockFaces/Vectors to physical Blocks in the world
         return path.map { faceModifier ->
