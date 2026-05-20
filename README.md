@@ -12,9 +12,9 @@ Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments
 - For Fabric: https://modrinth.com/mod/bedfallback
 
 ## Features
-- **Remember multiple respawns:** Configure your desired limit of respawn points (set via bed or respawn anchor), ensuring that you're never left stranded at world spawn!
-- **Enjoy near-complete transparency:** The plugin stays out of your way. At maximum, the player sees a message on fallback respawns - which you can turn off if you so choose!
-- **Respawn across dimensions:** If your bed breaks in the Overworld, you can fallback to a respawn anchor in the Nether!
+- **Keep a buffer of your spawns!** On death, you have a much bigger buffer (default: last 5 valid spawn locations) against world spawn stranding - now you get not just one, but five (configurable) respawn points!
+- **Never fret on death with automatic fallback!** Broke your current bed? Don't worry! You'll just spawn at the previous bed you slept at!
+- **Respawn across dimensions!** If your bed breaks in the Overworld, you can fallback to a respawn anchor in the Nether and vice versa!
 
 ## FAQ
 - **How do I use this?**
@@ -27,6 +27,8 @@ Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments
   - By default, it is the last N valid spawn points at the time of respawn. You can change it to be plain N spawn points in the config.
 - **Does it keep tracking after server shutdown?**
   - Duh, of course! It'd be pretty useless otherwise!
+- **How vanilla-ish is this plugin?**
+  - Pretty vanilla. Apart from the core functionality, the plugin stays out of your way. At maximum, the player sees a message on fallback respawns - which you can turn off if you so choose!
 - **What happens if I just never die?**
   - Then you can hog all the memory on the server. This plugin doesn't purge invalid records since vanilla logic only checks validity on respawn, so the only thing that we can use to purge invalid records is the limit.
 - **Did you use AI?**
