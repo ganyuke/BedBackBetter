@@ -1,14 +1,21 @@
 package io.github.ganyuke.bedFallback.compaction
 
 import io.github.ganyuke.bedFallback.RespawnRecord
-import io.github.ganyuke.bedFallback.resolveLocation
+import org.bukkit.Location
 import java.util.UUID
 
 // keep only the most recent N spawn records
 // most recent is the records at the end
 object LastNCompaction : CompactionStrategy {
-    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int) {
-        history.subList(0, maxOf(0, history.size - limit)).clear()
+    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int, resolver: (RespawnRecord) -> Location?) {
+        // no idea why the limit would be zero but okay
+        if (limit <= 0) {
+            history.clear()
+            return
+        }
+
+        // must guard in case history < limit
+        repeat((history.size - limit).coerceAtLeast(0)) { history.removeFirst() }
     }
 }
 
@@ -16,17 +23,36 @@ object LastNCompaction : CompactionStrategy {
 // most recent records at the end
 // find N valid spawns at respawn time, drop all older
 object LastNValidCompaction : CompactionStrategy {
-    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int) {
+    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int, resolver: (RespawnRecord) -> Location?) {
+        // no idea why the limit would be zero but okay
+        if (limit <= 0) {
+            history.clear()
+            return
+        }
+
+        // keep track of N valid records
         var validCount = 0
-        val lastKeptIndex = history.indexOfLast { resolveLocation(it) != null && ++validCount == limit }
-        if (lastKeptIndex != -1) history.subList(0, lastKeptIndex).clear()
+
+        // find N-th valid records
+        val lastKeptIndex = history.indexOfLast { resolver(it) != null && ++validCount == limit }
+
+        // if not -1, that means we found N valid records
+        if (lastKeptIndex != -1) repeat(lastKeptIndex) { history.removeFirst() }
+
+        // don't clear anything, since we get a last index of -1 when we found only <N valid records
     }
 }
 
 // keep only the most recent N spawn records in dimension
 // most recent is the records at the end
 object LastNDimensionCompaction : CompactionStrategy {
-    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int) {
+    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int, resolver: (RespawnRecord) -> Location?) {
+        // no idea why the limit would be zero but okay
+        if (limit <= 0) {
+            history.clear()
+            return
+        }
+
         val dimCounts = mutableMapOf<UUID, Int>()
         // collect N records per dimension then drop the rest
         history.asReversed().retainAll { record ->
@@ -45,14 +71,20 @@ object LastNDimensionCompaction : CompactionStrategy {
 // keep only the most recent N spawn records in dimension
 // most recent is the records at the end
 object LastNValidDimensionCompaction : CompactionStrategy {
-    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int) {
+    override fun compact(history: ArrayDeque<RespawnRecord>, limit: Int, resolver: (RespawnRecord) -> Location?) {
+        // no idea why the limit would be zero but okay
+        if (limit <= 0) {
+            history.clear()
+            return
+        }
+
         val dimCounts = mutableMapOf<UUID, Int>()
         // collect N valid records per dimension then drop the rest
         history.asReversed().retainAll { record ->
             val worldUuid = record.worldCoord.world
             val count = dimCounts.getOrDefault(worldUuid, 0)
             if (count < limit) {
-                if (resolveLocation(record) != null) dimCounts[worldUuid] = count + 1
+                if (resolver(record) != null) dimCounts[worldUuid] = count + 1
                 true
             } else {
                 false

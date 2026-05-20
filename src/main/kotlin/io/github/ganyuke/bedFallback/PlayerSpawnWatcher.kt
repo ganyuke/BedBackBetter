@@ -5,10 +5,9 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitTask
 import java.util.UUID
-import kotlin.collections.set
 
 class PlayerSpawnWatcher {
-    private lateinit var task: BukkitTask
+    private var task: BukkitTask? = null
     private val lastRespawnLocations = mutableMapOf<UUID, Location>()
     private val plugin: JavaPlugin
 
@@ -25,7 +24,7 @@ class PlayerSpawnWatcher {
     }
 
     fun onDisable() {
-        task.cancel()
+        task?.cancel()
     }
 
     private fun checkRespawnLocation(player: Player) {

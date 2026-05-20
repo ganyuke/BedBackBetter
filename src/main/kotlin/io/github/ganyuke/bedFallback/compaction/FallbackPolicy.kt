@@ -1,6 +1,6 @@
 package io.github.ganyuke.bedFallback.compaction
 
-enum class RespawnPolicy {
+enum class FallbackPolicy {
     LAST_N,
     LAST_N_VALID,
     LAST_N_IN_DIMENSION,

@@ -1,12 +1,7 @@
 package io.github.ganyuke.bedFallback
 
+import io.github.ganyuke.bedFallback.config.PluginConfig.PluginConfiguration
 import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent
-import io.github.ganyuke.bedFallback.compaction.CompactionStrategy
-import io.github.ganyuke.bedFallback.compaction.LastNCompaction
-import io.github.ganyuke.bedFallback.compaction.LastNDimensionCompaction
-import io.github.ganyuke.bedFallback.compaction.LastNValidCompaction
-import io.github.ganyuke.bedFallback.compaction.LastNValidDimensionCompaction
-import io.github.ganyuke.bedFallback.compaction.RespawnPolicy
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.data.type.RespawnAnchor
@@ -18,23 +13,15 @@ import org.bukkit.plugin.java.JavaPlugin
 import java.util.UUID
 
 class RespawnHijackListener : Listener {
-    private val playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>>
+    private val playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>> = HashMap()
     private val pendingRespawnLocation: MutableMap<UUID, Location> = HashMap()
 
-    private val playerRespawnLimit = 5 // TODO; make configurable
-    private val compactionStrategy: CompactionStrategy
     private val plugin: JavaPlugin
+    private val pluginConfig: PluginConfiguration
 
-
-    constructor(plugin: JavaPlugin, playerRespawnRecorder: MutableMap<UUID, ArrayDeque<RespawnRecord>>, playerRespawnPolicy: RespawnPolicy) {
+    constructor(plugin: JavaPlugin, config: PluginConfiguration) {
         this.plugin = plugin
-        this.playerRespawnRecorder = playerRespawnRecorder
-        this.compactionStrategy = when (playerRespawnPolicy) {
-            RespawnPolicy.LAST_N -> LastNCompaction
-            RespawnPolicy.LAST_N_VALID -> LastNValidCompaction
-            RespawnPolicy.LAST_N_IN_DIMENSION -> LastNDimensionCompaction
-            RespawnPolicy.LAST_N_VALID_IN_DIMENSION -> LastNValidDimensionCompaction
-        }
+        this.pluginConfig = config
     }
 
     fun onDisable() {
@@ -45,7 +32,7 @@ class RespawnHijackListener : Listener {
     private fun resolveValidRecord(history: ArrayDeque<RespawnRecord>, skipLast: Int = 1): Pair<RespawnRecord, Location>? {
         val validEntry = history.indices.reversed().drop(skipLast)
             .firstNotNullOfOrNull { i ->
-                resolveLocation(history[i])?.let { loc -> Pair(i, loc) }
+                history[i].resolveLocation()?.let { loc -> Pair(i, loc) }
             }
 
         val keepUntil = validEntry?.first ?: -1
@@ -114,7 +101,7 @@ class RespawnHijackListener : Listener {
         // drop the most recent record since that is the one that just failed
         val playerSpawnRecords = playerRespawnRecorder[player.uniqueId]
         val resolved = playerSpawnRecords?.let { record -> resolveValidRecord(record, skipLast = 1) }
-        playerSpawnRecords?.let { compactionStrategy.compact(it, playerRespawnLimit) }
+        playerSpawnRecords?.let { pluginConfig.resolveFallback().compact(it, pluginConfig.spawnLimit) }
 
         if (resolved != null) {
             val (record, respawnLocation) = resolved

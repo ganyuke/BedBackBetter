@@ -11,7 +11,13 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    testImplementation("io.papermc.paper:paper-api:26.1.2.build.+")
+
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("io.mockk:mockk:1.14.9")
 }
 
 kotlin {
@@ -36,5 +42,12 @@ tasks {
         filesMatching("plugin.yml") {
             expand(props)
         }
+    }
+
+    test {
+        useJUnitPlatform()
+        jvmArgs("-XX:+EnableDynamicAgentLoading")
+        logging.captureStandardOutput(LogLevel.INFO)
+        logging.captureStandardError(LogLevel.INFO)
     }
 }

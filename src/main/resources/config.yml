@@ -1,0 +1,12 @@
+# The number of previous spawn locations to remember
+spawn-point-limit: 5
+
+# Behavior on fallback:
+# - LAST_N: Consider only the N most recent spawn points (incl. invalid)
+# - LAST_N_VALID: Consider only the N most recent *valid* spawn points
+# - LAST_N_IN_DIMENSION: Consider only the N most recent spawn points in that dimension (incl. invalid)
+# - LAST_N_VALID_IN_DIMENSION: Consider only the N most recent *valid* spawn points in that dimension
+fallback-policy: LAST_N_VALID
+
+# Enable debug functionality (server logs when spawn changes, record changes, etc.)
+debug-mode: false
