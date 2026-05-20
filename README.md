@@ -1,9 +1,9 @@
 # Bed Back Better
 Never worry about your friend breaking your bed! Your last 5 valid spawn points (configurable) are now recorded so that, even if your bed breaks, you've always got a (hopefully) nearby bed to fallback to.
 
-Includes respawn anchors as well!
+A set-it-and-forget-it Paper plugin for Minecraft 1.21.5+ that lets you fallback to previous beds and respawn anchors.
 
-A set-it-and-forget-it Paper plugin for Minecraft 1.21+ that lets you fallback to previous beds and respawn anchors.
+Tested to work on Paper 1.21.5 and 26.1.2.
 
 Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments/1tbfibr/use_last_5respawnpoints/).
 
@@ -11,11 +11,16 @@ Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments
 - For (Neo)Forge: https://modrinth.com/mod/back-up-beds
 - For Fabric: https://modrinth.com/mod/bedfallback
 
+## Features
+- **Remember multiple respawns:** Configure your desired limit of respawn points (set via bed or respawn anchor), ensuring that you're never left stranded at world spawn!
+- **Enjoy near-complete transparency:** The plugin stays out of your way. At maximum, the player sees a message on fallback respawns - which you can turn off if you so choose!
+- **Respawn across dimensions:** If your bed breaks in the Overworld, you can fallback to a respawn anchor in the Nether!
+
 ## FAQ
 - **How do I use this?**
   - Right-click a bed. Right-click another bed, then break it. Die. Now you spawn at the first bed!
 - **Does it work across dimensions?**
-  - By default, yes! If your bed breaks in the Overworld, you can respawn at a respawn anchor in the Nether!
+  - By default, yes! If your bed breaks in the Overworld, you can respawn at a respawn anchor in the Nether, provided that it is (1) charged, (2) not obstructed, and (3) your plugin configuration allows cross-dimension travel!
 - **What happens if I break a bed and place it in the same place?**
   - The plugin follows vanilla mechanics closely (as long as the Minecraft Wiki was right for [bed logic](https://minecraft.wiki/w/Bed#Setting_the_spawn_point) and [respawn anchor logic](https://minecraft.wiki/w/Respawn_Anchor#Respawning)!). As long as you replace the exact block where the former head of the bed was with the new bed, you should be able to fallback to that bed!
 - **Is it the 'last N valid beds that I slept in' or 'last N beds total' (including broken ones)?**
@@ -41,6 +46,12 @@ spawn-point-limit: 5
 # - LAST_N_VALID_IN_DIMENSION: Consider only the N most recent *valid* spawn points in that dimension
 fallback-policy: LAST_N_VALID
 
+# How often to autosave spawn records (in minutes). Set to 0 to never autosave.
+autosave-interval: 5
+
+# What to say to players when they fall back to a new location. Set to "" to omit a message.
+fallback-respawn-message: "Your respawn was updated to a new location"
+
 # Enable debug functionality (server logs when spawn changes, record changes, etc.)
 debug-mode: false
 ```
@@ -50,7 +61,7 @@ This plugin does not use any commands.
 
 ## How do I tell you that your plugin is broken?
 
-Report issues with my spaghetti code through the [issue tracker](https://github.com/ganyuke/CooperativeEndAccess/issues) on the [plugin's GitHub repository](https://github.com/ganyuke/CooperativeEndAccess/).
+Report issues with my spaghetti code through the [issue tracker](https://github.com/ganyuke/BedBackBetter/issues) on the [plugin's GitHub repository](https://github.com/ganyuke/BedBackBetter/).
 
 ## How do I build this plugin myself?
 
@@ -61,9 +72,9 @@ Report issues with my spaghetti code through the [issue tracker](https://github.
 
 ## How do I submit features for this plugin?
 
-If you wrote the code for it, I'll happily accept a pull request if I feel like it doesn't bloat the scope of this plugin. Ensure that you use the [pull request template](https://raw.githubusercontent.com/ganyuke/CooperativeEndAccess/refs/heads/main/.github/pull_request_template.md).
+If you wrote the code for it, I'll happily accept a pull request if I feel like it doesn't bloat the scope of this plugin. Ensure that you use the [pull request template](https://raw.githubusercontent.com/ganyuke/BedBackBetter/refs/heads/main/.github/pull_request_template.md).
 
-By submitting a contribution to this repository, you agree that your contribution is licensed under the same license as this repository, as published in the [`LICENSE`](https://raw.githubusercontent.com/ganyuke/CooperativeEndAccess/refs/heads/main/LICENSE) file.
+By submitting a contribution to this repository, you agree that your contribution is licensed under the same license as this repository, as published in the [`LICENSE`](https://raw.githubusercontent.com/ganyuke/BedBackBetter/refs/heads/main/LICENSE) file.
 
 ## License
 Unless otherwise noted, all source code in this repository is licensed under the **Mozilla Public License 2.0** (SPDX: **MPL-2.0**). Please view the [`LICENSE`](https://raw.githubusercontent.com/ganyuke/BedBackBetter/refs/heads/main/LICENSE) file for the terms you are afforded under the MPL-2.0.
