@@ -1,7 +1,7 @@
 # Bed Back Better
 Never worry about your friend breaking your bed! Your last 5 valid spawn points (configurable) are now recorded so that, even if your bed breaks, you've always got a (hopefully) nearby bed to fallback to.
 
-A set-it-and-forget-it Paper plugin for Minecraft 1.21.5+ that lets you fallback to previous beds and respawn anchors.
+A set-it-and-forget-it, vanilla-ish Paper plugin for Minecraft 1.21.5+ that lets you fallback to previous beds and respawn anchors.
 
 Tested to work on Paper 1.21.5 and 26.1.2.
 
@@ -28,9 +28,9 @@ Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments
 - **Does it keep tracking after server shutdown?**
   - Duh, of course! It'd be pretty useless otherwise!
 - **How vanilla-ish is this plugin?**
-  - Pretty vanilla. Apart from the core functionality, the plugin stays out of your way. At maximum, the player sees a message on fallback respawns - which you can turn off if you so choose!
+  - Pretty vanilla. Spawn points are only considered at respawn time. If a spawn point is invalid at respawn time, it is deleted from memory (like in vanilla). The plugin will continue to drop records until it finds a valid spawn point, at respawn time.
 - **What happens if I just never die?**
-  - Then you can hog all the memory on the server. This plugin doesn't purge invalid records since vanilla logic only checks validity on respawn, so the only thing that we can use to purge invalid records is the limit.
+  - Then you don't get to take advantage of this plugin!
 - **Did you use AI?**
   - Yeah, I definitely did - mostly for the bed and respawn anchor validity (because geometry is a pain!). Don't fret, the actual respawn logic was written and tested by me, so if anything is wrong there, it's because I, the faulty human, overlooked it. Take solace knowing that whatever bug you encountered is my fault and not a machine's!
 - **Can you make this for below 1.21.5?**
@@ -38,14 +38,21 @@ Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments
 
 ## Configuration options
 ```yaml
-# The number of previous spawn locations to remember
-spawn-point-limit: 5
+# How many previous spawn points to consider when finding a fallback respawn.
+# How many previous spawn points to consider when finding a fallback respawn.
+fallback-candidates: 5
+
+# Maximum spawn points to store per player. Oldest are dropped when exceeded.
+# Set to 0 for unlimited.
+max-stored-spawns: 100
 
 # Behavior on fallback:
 # - LAST_N: Consider only the N most recent spawn points (incl. invalid)
 # - LAST_N_VALID: Consider only the N most recent *valid* spawn points
 # - LAST_N_IN_DIMENSION: Consider only the N most recent spawn points in that dimension (incl. invalid)
 # - LAST_N_VALID_IN_DIMENSION: Consider only the N most recent *valid* spawn points in that dimension
+# Note: this policy affects what records are safe to clean up at respawn time, independent of max-stored-spawns.
+# For example, LAST_N_VALID will drop all records, both valid and invalid past the Nth valid spawn point it finds.
 fallback-policy: LAST_N_VALID
 
 # How often to autosave spawn records (in minutes). Set to 0 to never autosave.

@@ -134,6 +134,12 @@ class RespawnHijackListener : Listener {
             logger.debug("Added a new spawn record for player ${player.name}: $respawnRecord")
         }
 
+        // drop the oldest records if maxStored is enabled
+        if (pluginConfig.maxStored != 0 && history.size >= pluginConfig.maxStored) {
+            history.removeFirstOrNull()
+            logger.debug("Player ${player.name} was over ${pluginConfig.maxStored} stored respawn point(s), dropped oldest from memory")
+        }
+
         history.add(respawnRecord)
     }
 

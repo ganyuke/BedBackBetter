@@ -1,11 +1,17 @@
-# The number of previous spawn locations to remember
-spawn-point-limit: 5
+# How many previous spawn points to consider when finding a fallback respawn.
+fallback-candidates: 5
+
+# Maximum spawn points to store per player. Oldest are dropped when exceeded.
+# Set to 0 for unlimited.
+max-stored-spawns: 100
 
 # Behavior on fallback:
 # - LAST_N: Consider only the N most recent spawn points (incl. invalid)
 # - LAST_N_VALID: Consider only the N most recent *valid* spawn points
 # - LAST_N_IN_DIMENSION: Consider only the N most recent spawn points in that dimension (incl. invalid)
 # - LAST_N_VALID_IN_DIMENSION: Consider only the N most recent *valid* spawn points in that dimension
+# Note: this policy affects what records are safe to clean up at respawn time, independent of max-stored-spawns.
+# For example, LAST_N_VALID will drop all records, both valid and invalid past the Nth valid spawn point it finds.
 fallback-policy: LAST_N_VALID
 
 # How often to autosave spawn records (in minutes). Set to 0 to never autosave.
