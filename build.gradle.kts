@@ -17,7 +17,6 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("io.mockk:mockk:1.14.9")
 }
 
 kotlin {
@@ -47,7 +46,5 @@ tasks {
     test {
         useJUnitPlatform()
         jvmArgs("-XX:+EnableDynamicAgentLoading")
-        logging.captureStandardOutput(LogLevel.INFO)
-        logging.captureStandardError(LogLevel.INFO)
     }
 }
