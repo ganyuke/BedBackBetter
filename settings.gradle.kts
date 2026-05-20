@@ -1,1 +1,1 @@
-rootProject.name = "Bed Fallback"
+rootProject.name = "BedBackBetter"

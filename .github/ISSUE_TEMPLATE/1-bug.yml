@@ -1,0 +1,67 @@
+name: Bug Report
+description: Report an issue or unexpected behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What issue did you experience?
+      description: Describe clearly what you expected to happen and what actually happened.
+      placeholder: The plugin did... when I expected it to...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: How did you trigger the issue?
+      description: Give step-by-step instructions to reproduce the issue in question.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Plugin Version
+      placeholder: v0.1.1
+    validations:
+      required: true
+  - type: dropdown
+    id: plugin_source
+    attributes:
+      label: Plugin Source
+      options:
+        - Modrinth
+        - GitHub
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        examples:
+          - **Minecraft Version**: 1.21.11
+          - **Server Type & Version**: Purpur 1.21.11 build 3555
+          - **Client Type & Version**: Fabric 1.21.11
+      value: |
+          - Minecraft Version:
+          - Server Type & Version:
+          - Client Type & Version:
+      render: markdown
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have tried to reproduce the issue in question.
+          required: false
+        - label: I understand that the maintainer is not obligated to help me.
+          required: true
+        - label: I will cooperate with the maintainer to solve this issue.
+          required: true

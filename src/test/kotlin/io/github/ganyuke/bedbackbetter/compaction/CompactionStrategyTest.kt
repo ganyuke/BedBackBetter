@@ -1,8 +1,10 @@
-package io.github.ganyuke.bedFallback.compaction
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter.compaction
 
 import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent
-import io.github.ganyuke.bedFallback.RespawnRecord
-import io.github.ganyuke.bedFallback.WorldCoord
+import io.github.ganyuke.bedbackbetter.RespawnRecord
+import io.github.ganyuke.bedbackbetter.WorldCoord
 import org.bukkit.Location
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

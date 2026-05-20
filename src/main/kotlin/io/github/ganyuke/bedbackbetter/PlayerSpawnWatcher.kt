@@ -1,4 +1,6 @@
-package io.github.ganyuke.bedFallback
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter
 
 import org.bukkit.Location
 import org.bukkit.entity.Player

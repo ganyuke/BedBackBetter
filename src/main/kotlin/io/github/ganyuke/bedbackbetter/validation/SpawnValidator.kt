@@ -1,6 +1,8 @@
-package io.github.ganyuke.bedFallback.validation
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter.validation
 
-import io.github.ganyuke.bedFallback.RespawnRecord
+import io.github.ganyuke.bedbackbetter.RespawnRecord
 import org.bukkit.Location
 
 interface SpawnValidator {

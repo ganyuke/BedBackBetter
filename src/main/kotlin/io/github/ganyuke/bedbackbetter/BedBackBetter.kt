@@ -1,10 +1,12 @@
-package io.github.ganyuke.bedFallback
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter
 
-import io.github.ganyuke.bedFallback.config.PluginConfig
-import io.github.ganyuke.bedFallback.config.PluginConfig.PluginConfiguration
+import io.github.ganyuke.bedbackbetter.config.PluginConfig
+import io.github.ganyuke.bedbackbetter.config.PluginConfig.PluginConfiguration
 import org.bukkit.plugin.java.JavaPlugin
 
-class BedFallback : JavaPlugin() {
+class BedBackBetter : JavaPlugin() {
     private lateinit var respawnHijackListener: RespawnHijackListener
     private lateinit var pluginConfig: PluginConfiguration
 

@@ -1,0 +1,12 @@
+name: Question
+description: Ask a general question not covered by the other templates.
+title: "[Question]: "
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What do you want to know?
+      description: Describe clearly what you want to know and why.
+      placeholder: I was wondering about... because...
+    validations:
+      required: true

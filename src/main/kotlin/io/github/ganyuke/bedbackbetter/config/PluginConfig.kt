@@ -1,10 +1,12 @@
-package io.github.ganyuke.bedFallback.config
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter.config
 
-import io.github.ganyuke.bedFallback.compaction.FallbackPolicy
-import io.github.ganyuke.bedFallback.compaction.LastNCompaction
-import io.github.ganyuke.bedFallback.compaction.LastNDimensionCompaction
-import io.github.ganyuke.bedFallback.compaction.LastNValidCompaction
-import io.github.ganyuke.bedFallback.compaction.LastNValidDimensionCompaction
+import io.github.ganyuke.bedbackbetter.compaction.FallbackPolicy
+import io.github.ganyuke.bedbackbetter.compaction.LastNCompaction
+import io.github.ganyuke.bedbackbetter.compaction.LastNDimensionCompaction
+import io.github.ganyuke.bedbackbetter.compaction.LastNValidCompaction
+import io.github.ganyuke.bedbackbetter.compaction.LastNValidDimensionCompaction
 
 import org.bukkit.configuration.file.FileConfiguration
 import java.util.logging.Logger

@@ -1,0 +1,21 @@
+name: Documentation Change
+description: Suggest updates to the plugin's documentation.
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What do you want to see changed in the documentation?
+      description: Describe clearly what change you want to see in the documentation.
+      placeholder: The documentation is lacking in...
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: For what reason would you like to see this changed?
+      description: Explain your use case for this documentation change and why this plugin's current documentation is inadequate.
+      placeholder: Currently... but...
+    validations:
+      required: true

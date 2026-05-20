@@ -1,6 +1,8 @@
-package io.github.ganyuke.bedFallback
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter
 
-import io.github.ganyuke.bedFallback.config.PluginConfig.PluginConfiguration
+import io.github.ganyuke.bedbackbetter.config.PluginConfig.PluginConfiguration
 import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -100,7 +102,10 @@ class RespawnHijackListener : Listener {
         val player = event.player
 
         // skip hijack if the respawn is considered valid by vanilla
-        if (!event.isMissingRespawnBlock) {
+
+        // isMissingRespawnBlock() was added in [this commit](https://github.com/PaperMC/Paper/pull/12422) in Paper 1.21.5
+        // so that's as far as we can lower the API version, unless we want to do something hacky
+        if (!event.isMissingRespawnBlock) { // only in 26.1+ i guess
             val loc = event.respawnLocation
             logger.debug("Skipped hijacking spawn location for player ${player.name}: valid respawn at (${loc.x}, ${loc.y}, ${loc.z}) in ${loc.world.name}")
             return

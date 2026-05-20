@@ -1,6 +1,8 @@
-package io.github.ganyuke.bedFallback.compaction
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter.compaction
 
-import io.github.ganyuke.bedFallback.RespawnRecord
+import io.github.ganyuke.bedbackbetter.RespawnRecord
 import org.bukkit.Location
 import java.util.UUID
 

@@ -1,8 +1,10 @@
-package io.github.ganyuke.bedFallback
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: ganyuke
+package io.github.ganyuke.bedbackbetter
 
 import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent
-import io.github.ganyuke.bedFallback.validation.BedValidator
-import io.github.ganyuke.bedFallback.validation.RespawnAnchorValidator
+import io.github.ganyuke.bedbackbetter.validation.BedValidator
+import io.github.ganyuke.bedbackbetter.validation.RespawnAnchorValidator
 import org.bukkit.Location
 import org.bukkit.World
 import java.util.UUID

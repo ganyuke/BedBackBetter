@@ -1,0 +1,30 @@
+name: Feature Request
+description: Suggest a feature to be added to this plugin.
+title: "[Feat]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What do you want this plugin to do?
+      description: Describe clearly what this feature does.
+      placeholder: This feature allows...
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: What issue are you trying to solve with this feature?
+      description: Explain your use case for the feature and why this plugin's current functionality is inadequate.
+      placeholder: Me and my friends...
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I am willing to cooperate with the maintainer to see this feature through.
+          required: false
+        - label: I understand that I am submitting a request and the maintainer is under no obligation to accept my request.
+          required: true

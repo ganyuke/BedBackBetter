@@ -1,10 +1,10 @@
-name: BedFallback
+name: BedBackBetter
 description: $description
 version: '${version}'
 
-main: io.github.ganyuke.bedFallback.BedFallback
-api-version: '26.1.2'
+main: io.github.ganyuke.bedbackbetter.BedBackBetter
+api-version: '${paper_api_version}'
 load: POSTWORLD
 
 authors: [ ganyuke ]
-website: https://github.com/ganyuke/BedFallback
+website: https://github.com/ganyuke/BedBackBetter
