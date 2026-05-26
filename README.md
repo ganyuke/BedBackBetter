@@ -39,7 +39,6 @@ Idea stolen from [this Reddit post](https://old.reddit.com/r/admincraft/comments
 ## Configuration options
 ```yaml
 # How many previous spawn points to consider when finding a fallback respawn.
-# How many previous spawn points to consider when finding a fallback respawn.
 fallback-candidates: 5
 
 # Maximum spawn points to store per player. Oldest are dropped when exceeded.
